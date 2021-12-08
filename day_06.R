@@ -9,4 +9,9 @@ sum(x %*% Reduce(`%*%`, rep(list(A), 80)))
 
 #part 2--------
 print(sum(x %*% Reduce(`%*%`, rep(list(A), 256))), 12)
-#x %*% A is exactly the timings after one unit of time passes
+
+#Reduce(`%*%`, rep(list(A), 80)) is the base-R version of calculating matrix powers
+#Alternatively we could use the %^% from the expm package: A %^% 80
+#x contains the number of fish with remaining time of 0 to 8 days
+#x %*% A is exactly the new number of fish in each cycle after one day.
+# the solution therefore is only sum(x %*% A^n)
