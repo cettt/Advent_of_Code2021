@@ -7,7 +7,7 @@ sum(sapply(data08, \(z) sum(nchar(z[-(1:10)]) %in% c(2:4, 7))))
 #part2-----------
 find_digits <- function(x) {
 
-  y <- str_split(x[1:10], "")
+  y <- strsplit(x[1:10], "")
 
   y_174 <- sapply(2:4, \(k) y[sapply(y, length) == k][[1]]) #1, 7 and 4
   y_069 <- y[sapply(y, length) == 6]
@@ -17,7 +17,6 @@ find_digits <- function(x) {
 
   seg_c <- setdiff(y_174[[1]],   y_6) #segment in 2 but not 6
   seg_e <- setdiff(letters[1:7], y_9) # segment in 8 but not 9
-
 
   z <- strsplit(x[11:14], "")
   res <- integer(4)
