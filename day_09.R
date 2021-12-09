@@ -1,27 +1,30 @@
 data09 <- unlist(read.fwf("Input/day09.txt", widths = rep(1, 100)))
 
-idx_map <- function(k) {
-  m <- k %% 100L
-  res <- c(k + 100 * c(1, -1), k + if (m > 1) c(1, -1) else if (m == 1) 1 else -1)
-  res[res > 0 & res < 10001]
+map_k <- function(k) {
+  m <- k %% 100
+  k + c(if (k < 9901) 100, if (k > 100) -100, if (m != 1) -1, if (m != 0) 1)
 }
 
 #part1-----
-basin_idx <- which(data09 < sapply(seq_along(data09), \(k) min(data09[idx_map(k)])))
+basin_idx <- which(data09 < sapply(seq_along(data09), \(k) min(data09[map_k(k)])))
 sum(data09[basin_idx] + 1L)
 
 #part2-----
-basin_sign <- function(queue) {
+basin_size <- function(queue) {
   j <- 1L
-
   while (j <= length(queue)) {
-    x <- idx_map(queue[j]) #neighbor edges
-    new_edge <- setdiff(x[data09[x] > data09[queue[j]] & data09[x] < 9L], queue)
-    queue <- c(queue, new_edge)
+    x <- map_k(queue[j]) #neighbor edges
+    queue <- c(queue, setdiff(x[data09[x] < 9L], queue))
     j <- j + 1L
   }
 
   return(length(queue))
 }
 
-prod(sort(sapply(basin_idx, basin_sign), decreasing = TRUE)[1:3])
+prod(sort(sapply(basin_idx, basin_size), decreasing = TRUE)[1:3])
+
+#the function map_k returns for given index k the indices of neighbor cells.
+#the function basin size returns the size of a basin given the index of the lowest part.
+#   it relies on a BFS-style algorithm: #
+#     in each step we determine new edges and check which of these edges we already visited
+#     we repeat this procedure until no new edges are found
