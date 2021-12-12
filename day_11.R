@@ -6,9 +6,9 @@ lookup <- lapply(seq_along(data11), \(k) which(abs(z - z[k]) < 2))
 n <- 0L
 rounds <- 0L
 
-while (any(data11 != 0L)) {
+while (any(is.finite(data11))) {
  rounds <- rounds + 1L
- data11 <- data11 + 1L
+ data11 <- ifelse(is.finite(data11), data11 + 1L, 1L)
 
  while (any(data11 >= 10L)) {
    idx <- table(unlist(lookup[data11 >= 10L]))
@@ -17,11 +17,10 @@ while (any(data11 != 0L)) {
  }
  n <- n + sum(is.infinite(data11))
  if (rounds == 100L) part1 <- n
- data11[is.infinite(data11)] <- 0L
 }
 
-#part1-------
-part1
+#part1 and part2-------
+c(part1 = part1, part2 = rounds)
 
-#part2-----
-rounds
+#we set the energy level of a octopus after a flash to minus infinity
+#  this way we don't have to keep track of which octopus flashed in a round
