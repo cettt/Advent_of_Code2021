@@ -1,39 +1,21 @@
-data14 <- readLines("Input/day14.txt")
+data14 <- read.table("Input/day14.txt", sep = ".")[,1]
 
-x <- sapply(seq_len(nchar(data14[1]) - 1), \(k) substring(data14[1], k, k + 1))
-pats <- lapply(strsplit(data14[-(1:2)], ""), \(y) c(paste0(y[1], y[2]), paste0(y[1], y[7]), paste0(y[7], y[2])))
-pats <- do.call(rbind, pats)
+.a <- sapply(strsplit(data14[-1], ""), \(y) paste0(y[c(1, 1, 7)], y[c(2, 7, 2)]))
+A <- apply(.a, 2, \(y) ifelse(.a[1,] %in% y[-1], 1L, 0L))
+x <- sapply(.a[1,], \(y) sum(gregexpr(y, data14[1])[[1]] > 0))
 
-simulate_poly <- function(n) {
-  tab <- table(x)
-  for (i in seq_len(n)) {
-    new_tab <- integer()
-    for (k in seq_along(tab)) {
-      if (names(tab[k]) %in% pats[,1]) {
-        new_tab <- c(new_tab, setNames(rep(tab[k], 2), pats[pats[,1] == names(tab[k]), -1]))
-      } else new_tab <- c(new_tab, setNames(tab[k], names(tab[k])))
-    }
-
-    pre <- aggregate(new_tab, list(names(new_tab)), sum)
-    tab <- setNames(pre[,2], pre[,1])
-  }
-
-  az <- setNames(c(1,1), substring(data14[1], c(1, nchar(data14[1])), c(1, nchar(data14[1]))))
-
-  tab <- c(tab, az)
-
-  my_count <- function(a) {
-    aa <- paste0(a, a)
-    sum(tab[grepl(a, names(tab))]) + sum(tab[grepl(aa, names(tab))])
-  }
-
-  fin <- sapply(unique(substr(pats[,1], 1, 1)), my_count) / 2
-  max(fin) - min(fin)
-
-}
+y <- sapply(c(10, 40), \(n) c(1, Reduce(`%*%`, rep(list(A), n)) %*% x)) #add 1 for the first letter
+res <- aggregate(y, list(c(substr(data14[1], 1, 1), sub(".", "", .a[1,]))), sum)
 
 #part1--------
-simulate_poly(10)
+diff(range(res[,2]))
 
 #part2----
-print(simulate_poly(40), 12)
+sprintf("%.f", diff(range(res[,3])))
+
+
+#the idea is not to consider the polymer as a whole but to model the evolution of each pair individually
+# x is a list with the number of all initial pairs
+# after each step the new number of pairs is given by A %*% x
+# in order to count the elements in the result we only consider the last letter of each pair.
+# In order not to miss the very first letter of the final string we add it to res
