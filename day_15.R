@@ -1,45 +1,40 @@
-data15 <- unlist(read.fwf("Input/day15.txt", rep(1, 100)))
+data15 <- as.integer(unlist(read.fwf("Input/day15.txt", rep(1, 100))))
 
-map_k <- function(k, n = 100) {
+map_k <- function(k, n = 100L) {
   m <- k %% n
-  k + c(if (k <= n^2 - n) n , if (k > n) -n, if (m != 1) -1, if (m != 0) 1)
+  k + c(if (k <= n^2 - n) n , if (k > n) -n, if (m != 1L) -1L, if (m != 0L) 1L)
 }
 
-lookup <- lapply(seq_along(data15), map_k, n = 100)
+find_shortest_path <- function(map, n = length(map)) {
 
-find_shortest_path <- function(.to, lu = lookup, maze = data15) {
-  queue <- 1L
-  risk_vec <- 0L
-  visited <- integer()
-  parent <- integer()
+  lookup <- lapply(seq_along(map), map_k, n = sqrt(n))
+  unvisited <- seq_along(map)
+  risk <- c(0L, rep(10000L, length(map) - 1L))
 
-  while (!.to %in% parent) {
-    idx <- risk_vec == min(risk_vec)
-    parent <- queue[idx]
-    cur_risk <- risk_vec[idx][1]
-    parent <- unique(parent)
-    visited <- c(parent, visited)
-
-    nei <- unlist(unname(lu[parent]))
-    nei <- nei[!nei %in% visited]
-
-    risk <- maze[nei]
-    idx2 <- queue %in% parent
-
-    risk_vec <-  c(risk_vec[!idx2], cur_risk + risk)
-    queue <- c(queue[!idx2], nei)
+  while (risk[n] >= 10000L) { #find fastest path
+    x <- risk[unvisited]
+    cur_risk <- min(x)
+    idx <- x == cur_risk #position of non-visited vertices with lowest risk
+    new_edges <- unlist(lookup[unvisited[idx]]) #find all adjacent vertices
+    risk[new_edges] <- pmin(risk[new_edges], cur_risk + map[new_edges]) #update accumulated risk
+    unvisited <- unvisited[!idx] #vertices with lowest risk are now visited
   }
+  return(risk[n])
 
-  return(cur_risk)
 }
 
 #part1-------
-find_shortest_path(1e4)
+find_shortest_path(data15)
 
 #part2-----
-x <- (data15 - 1L + rep(0:4, each = length(data15))) %% 9 + 1L
-x2 <- as.integer(Reduce(rbind, rep(lapply(0:4, \(k) (matrix(x, 100) - 1 + k) %% 9 + 1))))
+map5 <- matrix(sapply(0:4, \(k) data15 + k), nrow = 100) #copy horizontally
+map5 <- as.integer(Reduce(rbind, lapply(0:4 - 1L, \(k) map5 + k)) %% 9 + 1) # copy vertically
+find_shortest_path(map5)
 
-lookup2 <- lapply(seq_along(x2), map_k, n = 500)
 
-system.time(find_shortest_path(500^2, lookup2, x2))
+#alternatively we can use the igraph package to speed things up----
+# using igraph is about 10 times faster
+# find_shortest_path <- function(map, n = sqrt(length(map))) {
+#   gr <- igraph::make_lattice(dim = 2, length = n, directed = T, mutual = T)
+#   igraph::distances(gr, 1, length(map), "out", weights = map[igraph::get.edgelist(gr)[, 2]])
+# }
