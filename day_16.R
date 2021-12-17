@@ -1,11 +1,7 @@
-data16 <- readLines("Input/day16.txt")
+data16 <- strtoi(strsplit(readLines("Input/day16.txt"), "")[[1]], base = 16)
+bits <- as.integer(sapply(data16, \(y) as.integer(intToBits(y))[4:1]))
 
 bin2int <- function(y) sum(y * 2^(length(y):1 - 1L))
-
-map <- sort(apply(expand.grid(0:1, 0:1, 0:1, 0:1), 1,  paste, collapse = ""))
-map <- setNames(map, c(0:9, LETTERS[1:6]))
-
-bits <- as.integer(unlist(strsplit(map[strsplit(data16, "")[[1]]], "")))
 sv <- 0L #sum of versions
 
 find_value <- function() {
@@ -28,7 +24,8 @@ find_value <- function() {
   else {#number of packages
     n_pack <- bin2int(bits[7L + seq_len(11L)])
     bits <<- bits[-seq_len(18L)]
-    val <- sapply(seq_len(n_pack), \(k) find_value())
+    # val <- sapply(seq_len(n_pack), \(k) find_value())
+    val <- replicate(n_pack, find_value())
   }
 
   out_fun <- list(sum, prod, min, max, `>`, `<`, `==`)[[id + (id < 4)]]
