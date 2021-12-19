@@ -1,126 +1,76 @@
-library(tidyverse)
-data19 <- readLines("Input/day19.txt")
+data19 <- read.table("Input/day19.txt", sep = ".")[,1]
 
-scan_list <- tibble(x = data19) %>%
-  mutate(gr = cumsum(grepl("scan", x))) %>%
-  filter(x != "") %>%
-  filter(!grepl("scan", x)) %>%
-  separate(x, into = c("x", "y", "z"), sep = ",", convert = TRUE) %>%
-  group_by(gr) %>%
-  nest(scan = c(x,y,z)) %>%
-  mutate(scan = map(scan, ~ t(as.matrix(.)))) %>%
-  pull(scan)
+#parse data----
+li <- aggregate(data19, list(cumsum(grepl("s", data19))), \(x) paste(x[-1], collapse = " "))
+li <- lapply(strsplit(li[,2], " "), \(x) t(do.call(rbind, strsplit(x, ","))))
+li <- lapply(li, \(x) matrix(as.integer(x), nrow = 3))
 
-make_mat <- function(idx){
-  m <- rep(0L, 9)
-  m[idx[idx > 0]] <- 1L
-  m[-idx[idx < 0]] <- -1L
-  matrix(m, 3, 3)
+#create rotation matrices--------
+one_vec <- as.matrix(expand.grid(c(-1,1), c(-1,1), c(-1,1))) #helper matrix
+perm_list <- list(1:3, c(1,3,2), c(2,1,3), c(2,3,1), c(3:1), c(3,1,2)) #helper list
+
+make_mat <- function(perm_i, one_vec_j) {
+  m <- matrix(0, 3, 3)
+  m[perm_list[[perm_i]] + 0:2*3] <- 1 * one_vec[one_vec_j, ]
+  return(m)
 }
 
-R <- list(
-  make_mat(c(1,5,9)), # facing pos x
-  make_mat(c(1,6,-8)),
-  make_mat(c(1,-5,-9)),
-  make_mat(c(1,-6, 8)),
-  make_mat(c(-1,-5,9)), # facing neg x
-  make_mat(c(-1, -6, -8)),
-  make_mat(c(-1,5,-9)),
-  make_mat(c(-1, 6,8)),
-  make_mat(c(2, -4, 9)),#facing pos y
-  make_mat(c(2, 6, 7)),
-  make_mat(c(2, 4, -9)),
-  make_mat(c(2, -6, -7)),
-  make_mat(c(-2, -4, -9)),#facing neg y
-  make_mat(c(-2, -6, 7)),
-  make_mat(c(-2, 4, 9)),
-  make_mat(c(-2, 6, -7)),
-  make_mat(c(3, 5, -7)),#facing pos z
-  make_mat(c(3, 4, 8)),
-  make_mat(c(3, -5, 7)),
-  make_mat(c(3, -4, -8)),
-  make_mat(c(-3, -5, -7)),#facing neg z
-  make_mat(c(-3, -4, 8)),
-  make_mat(c(-3, 5, 7)),
-  make_mat(c(-3, 4, -8))
-)
+R <- unlist(lapply(1:6, \(i) lapply(1:8, \(j) make_mat(i, j))), recursive = FALSE)
+R <- R[sapply(R, \(m) det(m) == 1)] #correct matrices have determinant == 1
 
-check_intersect <- function(a, b) {
-  a_con <- integer(ncol(a))
-  for (k in 1:ncol(a)) {
-    xa <- apply(a[,-k], 2, \(x) sort(abs(x - a[,k]), decreasing = TRUE))
-
-    for (l in seq_len(ncol(b))) {
-      xb <- apply(b[,-l], 2, \(x) sort(abs(x - b[,l]), decreasing = TRUE))
-      if (ncol(xa) + ncol(xb) - ncol(unique(cbind(xa, xb), MARGIN = 2)) >= 11) {
-        a_con[k] <- l
-      }
-    }
-  }
-  return(sum(a_con != 0) >= 12)
+#for each scanner compute the inner group Manhattan distances
+find_rel_dist <- function(x) {
+  A <- expand.grid(seq_len(ncol(x)), seq_len(ncol(x)))
+  apply(A[A[,1] > A[,2], ], 1, \(i) sum(abs(x[,i[1]] - x[,i[2]])))
 }
 
+li2 <- lapply(li, find_rel_dist)
+
+#create a lookup table lu, which contains pair of scanners with 12 intersections----
+lu <- expand.grid(seq_along(li), seq_along(li))
+lu$intsct <- apply(lu, 1, \(i) length(intersect(li2[[i[1]]], li2[[i[2]]])))
+lu <- lu[lu[, 3] >= 66, ]
+
+#function to intersect to scanners and get scanner position
 intersect_scan <- function(i, j) {
-   a <- new_scan[[i]]$beacon
-   b <- new_scan[[j]]
-   Ri <- new_scan[[i]]$rot
-   posi <- new_scan[[i]]$scan_pos
+  a <- li3[[i]]$beacon
+  b <- li3[[j]]
 
-  a_con <- integer(ncol(a))
+  idx_ab <- integer(ncol(a))
   for (k in 1:ncol(a)) {
-  xa <- apply(a[,-k], 2, \(x) sort(abs(x - a[,k]), decreasing = TRUE))
-
+    xa <- colSums(abs(a - a[,k]))
     for (l in seq_len(ncol(b))) {
-      xb <- apply(b[,-l], 2, \(x) sort(abs(x - b[,l]), decreasing = TRUE))
-      if (ncol(xa) + ncol(xb) - ncol(unique(cbind(xa, xb), MARGIN = 2)) >= 11) {
-        a_con[k] <- l
-      }
+      xb <- colSums(abs(b - b[,l]))
+      if (length(intersect(xa, xb)) >= 12) idx_ab[k] <- l
     }
   }
-  if (sum(a_con != 0) < 12) return(list())
-  resa <- a[,which(a_con != 0)]
-  resb <- b[, a_con[a_con != 0]]
+
+  resa <- a[, which(idx_ab != 0)]
+  resb <- b[, idx_ab[idx_ab != 0]]
 
   .rot <- sapply(R, \(m) ncol(unique(m  %*% resb - resa, MARGIN = 2)))
   rot_idx <- which(.rot == 1)
-  sca <- -as.integer(R[[rot_idx]]  %*% resb[,1] - resa[,1])
-  beac <- (R[[rot_idx]] %*% b + sca)
+  pos <- -as.integer(R[[rot_idx]]  %*% resb[,1] - resa[,1])
+  beac <- (R[[rot_idx]] %*% b + pos)
 
-  return(list(scan_pos = sca, rot = R[[rot_idx]], beacon = beac))
+  return(list(pos = pos, beacon = beac))
 }
 
 #part1-----
-intmat <- matrix(0, length(scan_list), length(scan_list))
-
-for (i in 1:(length(scan_list) - 1)) {
- for (j in (i + 1):length(scan_list)) {
-  print(c(i, j))
-   intmat[i, j] <- check_intersect(scan_list[[i]], scan_list[[j]])
-   intmat[j, i] <- intmat[i,j]
- }
-}
-new_scan <- scan_list
-new_scan[[1]] <- list(scan_pos = c(0,0,0), rot = diag(3), beacon = scan_list[[1]])
+li3 <- li
+li3[[1]] <- list(scan_pos = c(0,0,0), beacon = li[[1]])
 scaned <- 1L
 
-while (length(scaned) < length(scan_list)) {
-  next_idx <- which(intmat == 1 & row(intmat) %in% scaned & ! col(intmat) %in% scaned, arr.ind = TRUE)[1,]
-  print(next_idx)
-  res <- intersect_scan(next_idx[1], next_idx[2])
-  scaned <- c(scaned, next_idx[2])
-  new_scan[[next_idx[2]]] <- res
+while (length(scaned) < length(li)) {
+  k <- as.integer(subset(lu, Var2 %in% scaned & !Var1 %in% scaned)[1,1:2])
+  scaned <- c(scaned, k[1])
+  li3[[k[1]]] <- intersect_scan(k[2], k[1])
 }
 
-
-new_scan[[4]]
-ncol(unique(Reduce(cbind, lapply(new_scan, \(z) z[[3]])), MARGIN = 2))
+ncol(unique(Reduce(cbind, lapply(li3, \(z) z[[2]])), MARGIN = 2))
 
 
 #part2------
-cur <- 0
-for (i in 1:(length(new_scan) - 1)) {
-  for (j in i:length(new_scan)) {
-    cur <- max(cur, sum(abs(new_scan[[i]][[1]] - new_scan[[j]][[1]])))
-  }
-}
-cur
+a <- sapply(li3, \(x) x[[1]])
+max(colSums(abs(a[, rep(seq_along(li), ncol(a))] - a[, rep(1:ncol(a), each = ncol(a))])))
+
