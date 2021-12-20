@@ -5,40 +5,47 @@ unlist_pairs <- function(x) {
 
 data18 <- lapply(strsplit(readLines("Input/day18.txt"), ""), unlist_pairs)
 
-add_numbers <- function(x, y) {
-  xy <- setNames(c(x, y), as.integer(names(c(x,y))) + 1L)
+add_pair <- function(x, y) {
+  xy <- setNames(c(x, y), as.integer(c(names(x), names(y))) + 1L)
 
-  while (any(c(names(xy) > 4, xy > 9))) {
+  while (TRUE) {
 
-    if (any(names(xy) > 4)) { #explode
-      n <- which(names(xy) > 4)[1]
-      if (n != 1L) xy[n - 1] <- xy[n - 1] + xy[n]
-      if (n != length(xy) - 1) xy[n + 2] <- xy[n + 2] + xy[n + 1]
-      xy <- c(xy[seq_len(n - 1)], setNames(0, "4"), xy[-seq_len(n + 1)])
-    } else { #split
-      n <- which(xy > 9)[1]
-      new_val <- c(floor(xy[n] / 2), ceiling(xy[n] / 2))
-      names(new_val) <- rep(as.integer(names(xy[n])) + 1, 2)
-      xy <- c(xy[seq_len(n - 1)], new_val, xy[-seq_len(n)])
+    exp_idx <- .Internal(which(names(xy) == "5"))
+    for (k in seq_len(length(exp_idx) / 2)) {
+      n <- exp_idx[2*k - 1L] - k + 1L
+      if (n > 1L)              xy[n - 1L] <- sum(xy[n - 0:1])
+      if (n < length(xy) - 1L) xy[n + 2L] <- sum(xy[n + 1:2])
+      xy[n] <- 0L
+      names(xy)[n] <- "4"
+      xy <- xy[-n - 1L]
     }
+
+    idx <- xy > 9L
+    if (any(idx)) {
+      n <- .Internal(which(idx))[1L]
+      z <- xy[n]
+      nam <- as.character(as.integer(names(z)) + 1L)
+      new_val <- as.integer((z + 0:1) / 2L)
+      names(new_val) <- c(nam, nam)
+      xy <- c(xy[seq_len(n - 1L)], new_val, xy[-seq_len(n)])
+    } else break
   }
   return(xy)
-
 }
 
 magn <- function(xy) {
-  while (length(xy) > 1) {
-    n <- which.max(names(xy))
-    new_val <- setNames(sum(xy[n + 0:1] * 3:2), as.integer(names(xy[n])) - 1L)
-    xy <- c(xy[seq_len(n - 1)], new_val, xy[-seq_len(n + 1)])
+  for (i in seq_len(length(xy) - 1L)) {
+    nam <- as.integer(names(xy))
+    n <- which.max(nam)
+    xy[n] <- sum(xy[n + 0:1] * 3:2)
+    names(xy)[n] <- as.character(nam[n] - 1L)
+    xy <- xy[-n - 1L]
   }
   return(xy)
 }
 
-magn(Reduce(add_numbers, data18))
+magn(Reduce(add_pair, data18))
 
 #part2-------
-comp_part2 <- function(idx) magn(Reduce(add_numbers, data18[idx]))
-
 A <- cbind(rep(seq_along(data18), 100), rep(seq_along(data18), each = 100))
-max(apply(A[A[,1] != A[,2], ], 1, comp_part2))
+max(apply(A[A[,1] != A[,2], ], 1, \(k) magn(Reduce(add_pair, data18[k]))))
