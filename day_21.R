@@ -1,65 +1,30 @@
 data21 <- read.table("input/day21.txt", sep = ":")[,2]
 
 #part1------
-die <- rep.int(seq_len(10) %% 10, 300)
-mo <- aggregate(die, list(rep(seq_len(1e3), each = 3)), \(x) sum(x) %% 10L)[,2]
-mo[1:2] <- (mo[1:2] + data21 - 1) %% 10 + 1L
-score <- aggregate(mo, list(rep(1:2, 500)), \(x) cumsum((cumsum(x) - 1L) %% 10L + 1L))[,2]
+die <- rep.int(seq_len(10L) %% 10L, 300L) #each player gets 500 turns
+mo <- aggregate(die, list(rep(seq_len(1e3), each = 3L)), \(x) sum(x) %% 10L)[,2]
+mo[1:2] <- (mo[1:2] + data21 - 1L) %% 10L + 1L
+score <- aggregate(mo, list(rep.int(1:2, 500L)), \(x) cumsum((cumsum(x) - 1L) %% 10L + 1L))[,2]
 
-n <- which(score >= 1000)[1]
-
- score[n - n %% 2] * n * 3
+n <- which(score >= 1000L)[1]
+score[n - 1L] * n * 3L
 
 #part2------
-library(tidyverse)
-p0 <- tibble(mo = rowSums(expand.grid(d1 = 1:3, d2 = 1:3, d3 = 1:3))) %>%
-  group_by(mo) %>%
-  summarise(n0 = n(), .groups = "drop") %>%
-  mutate(.j = 1)
-
-p <- tibble(x1 = data21[1], score1 = 0, x2 = data21[2], score2 = 0, n = 1, .j = 1)
-
-res_tib <- tibble(p = integer(), n = numeric())
+oc <- table(rowSums(expand.grid(1:3, 1:3, 1:3)))
+p0 <- data.frame(mo = as.integer(names(oc)), n0 = as.integer(oc), .j = 1L)
+p <- data.frame(x1 = data21[1], x2 = data21[2], s1 = 0L, s2 = 0L, n = 1, .j = 1L)
+n <- c(0, 0)
+k <- 1L
 
 while (nrow(p) > 0) {
-  p <- p %>%
-  filter(score2 < 21) %>%
-  left_join(p0, by = ".j") %>%
-  mutate(
-    x1 = (x1 + mo - 1L) %% 10 + 1L,
-    score1 = score1 + x1,
-    n = n * n0
-  ) %>%
-    group_by(x1, score1, x2, score2, .j) %>%
-    summarise(n = sum(n), .groups = "drop")
-
-  res_tib <- p %>%
-    filter(score1 >= 21) %>%
-    transmute(n = n, p = 1L) %>%
-    bind_rows(res_tib)
-
-
-  p <- p %>%
-    filter(score1 < 21) %>%
-    left_join(p0, by = ".j") %>%
-    mutate(
-      x2 = (x2 + mo - 1L) %% 10 + 1L,
-      score2 = score2 + x2,
-      n = n * n0
-    ) %>%
-    group_by(x1, score1, x2, score2, .j) %>%
-    summarise(n = sum(n), .groups = "drop")
-
-  res_tib <- p %>%
-    filter(score2 >= 21) %>%
-    transmute(n = n, p = 2L) %>%
-    bind_rows(res_tib)
-
+  p <- dplyr::left_join(p, p0, by = ".j")
+  p[, k] <- (p[, k] + p$mo - 1L) %% 10L + 1L # update position x
+  p[, k + 2] <- p[, k + 2] + p[, k] # update score s
+  p <- dplyr::summarise(dplyr::group_by(p, x1, x2, s1, s2, .j), n = sum(n*n0), .groups = "drop")
+  n[k] <- n[k] + sum(p[p[, k + 2] >= 21L, ]$n)
+  p <- p[p[, k + 2] < 21L, ]
+  k <- 3L - k # from 1 to 2 and from 2 to 1
 }
 
-res_tib %>%
-  group_by(p) %>%
-  summarise(n = sum(n)) %>%
-  pull(n) %>%
-  max() %>%
-  print(16)
+print(sprintf("%.f", max(n)))
+
