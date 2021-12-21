@@ -10,21 +10,21 @@ n <- which(score >= 1000L)[1]
 score[n - 1L] * n * 3L
 
 #part2------
-oc <- table(rowSums(expand.grid(1:3, 1:3, 1:3)))
-p0 <- data.frame(mo = as.integer(names(oc)), n0 = as.integer(oc), .j = 1L)
-p <- data.frame(x1 = data21[1], x2 = data21[2], s1 = 0L, s2 = 0L, n = 1, .j = 1L)
+A <- array(0L, dim = c(10,21,10,21))
+A[data21[2],1,data21[1], 1] <- 1L
+oc <- rep(c(0L, 0L, 0L, table(rowSums(expand.grid(1:3, 1:3, 1:3)))), 10)
 n <- c(0, 0)
-k <- 1L
+B <- sapply(0:9, \(k) oc[k * 9L + 1:10])
 
-while (nrow(p) > 0) {
-  p <- dplyr::left_join(p, p0, by = ".j")
-  p[, k] <- (p[, k] + p$mo - 1L) %% 10L + 1L # update position x
-  p[, k + 2] <- p[, k + 2] + p[, k] # update score s
-  p <- dplyr::summarise(dplyr::group_by(p, x1, x2, s1, s2, .j), n = sum(n*n0), .groups = "drop")
-  n[k] <- n[k] + sum(p[p[, k + 2] >= 21L, ]$n)
-  p <- p[p[, k + 2] < 21L, ]
-  k <- 3L - k # from 1 to 2 and from 2 to 1
+update2x2 <- function(a, pl) {
+  C <- B %*% a
+  n[pl] <<- n[pl] + sum(C[row(C) + col(C) >= 22])
+  t(sapply(1:10, \(k) c(rep.int(0L, k), C[k,])[seq_len(21)]))
 }
 
-print(sprintf("%.f", max(n)))
+for (r in 1:30) {
+  A <- array(apply(A, c(1,2), update2x2, pl = 2 - r %% 2), dim = dim(A))
+  if (all(A == 0)) break
+}
 
+sprintf("%.f", max(n))
