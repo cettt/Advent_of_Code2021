@@ -5,4 +5,4 @@ sum(abs(data07 - median(data07)))
 
 #part2----------
 x <- floor(mean(data07)) + 0:1
-min(sapply(x, \(z) sum(abs((data07 - z)) * (abs(data07 - z) + 1) / 2)))
+min(sapply(x, \(z) sum(abs((data07 - z)) * (abs(data07 - z) + 1)))) / 2

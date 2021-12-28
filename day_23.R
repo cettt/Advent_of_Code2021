@@ -2,7 +2,7 @@ move_amphipods <- function(inp) {
 
   z <- complex(real = rep(1:ncol(inp), each = nrow(inp)), imaginary = rep(1:nrow(inp), ncol(inp)))
   map <- z[grepl("\\w|\\.", inp)]
-  targ_room <- sort(Re(map[Im(map) > 2]))
+  targ_room <- as.integer(sort(Re(map[Im(map) > 2])))
   bottom <- nrow(inp) - 1L
   map <- map[Im(map) > 2 | !Re(map) %in% targ_room] # remove spots before entrance from map
 
@@ -11,43 +11,54 @@ move_amphipods <- function(inp) {
 
   label <- rep(1:4, each = length(state0) / 4)
   en_vec <- rep(10^(0:3), each = length(state0) / 4)
-  hallway <- Re(map[Im(map) == 2])
+  hallway <- as.integer(Re(map[Im(map) == 2]))
 
   classify_room <- function(room, state) {
     idx <- Re(state) == room
-    if (all(targ_room[idx] == room)) 2 else if (sum(idx) == bottom - 2) 1 else 0
+    if (all(targ_room[idx] == room)) 2L else if (sum(idx) == bottom - 2) 1L else 0L
   }
 
   find_new_states <- function(state) {
-    Rest <- Re(state)
-    Imst <- Im(state)
-    for (a in .Internal(which(Im(state) == 2))) {
-      if (all(targ_room[Rest == targ_room[a]] == targ_room[a])) { #check if target room is free
-        if (sum(Rest[Imst == 2] %in% seq(Rest[a], targ_room[a])) == 1L) { #if the way to the room is free
+    Rest <- as.integer(Re(state))
+    Imst <- as.integer(Im(state))
+    room_cat <- sapply(c(4L, 6L, 8L, 10L), classify_room, state = state)
+    occ_hallway <- as.integer(Rest[Imst == 2L])
+
+
+    for (a in .Internal(which(Imst == 2L))) {
+      if (room_cat[targ_room[a] / 2L - 1L] == 2L) { #check if target room is free
+        hw_r <- min(occ_hallway[occ_hallway > Rest[a]], 13L)
+        hw_l <- max(occ_hallway[occ_hallway < Rest[a]], 1L)
+        if (targ_room[a] < hw_r & targ_room[a] > hw_l) { #if the way to the room is free
           state[a] <- targ_room[a] + (bottom - sum(Rest == targ_room[a])) * 1i
           return(list(state)) #if we find an amphipod which can go home it goes home
         }
       }
     }
 
-    room_cat <- sapply(c(4,6,8,10), classify_room, state = state)
 
-    if (any(room_cat == 0)) {
-      amp <- .Internal(which(Re(state) == c(4,6,8,10)[room_cat == 0]))
+    if (sum(room_cat == 0L) == 1L) {
+      amp <- .Internal(which(Rest %in% c(4L, 6L ,8L ,10L)[room_cat == 0L]))
     } else {
-      amp <- .Internal(which(Re(state) %in% c(4,6,8,10)[room_cat != 2]))
+      amp <- .Internal(which(Rest %in% c(4L, 6L, 8L, 10L)[room_cat != 2L]))
     }
 
-    occ_hallway <- Rest[Imst == 2]
     new_states <- list()
 
     for (a in amp) {
 
       if (!(state[a] - 1i) %in% state) {
-        hw_r <- min(occ_hallway[occ_hallway > Rest[a]], 13)
-        hw_l <- max(occ_hallway[occ_hallway < Rest[a]], 1)
-        targ <- hallway[hallway > hw_l & hallway < hw_r] + 2*1i
+        hw_r <- min(occ_hallway[occ_hallway > Rest[a]], 13L)
+        hw_l <- max(occ_hallway[occ_hallway < Rest[a]], 1L)
 
+        if (room_cat[targ_room[a] / 2L - 1L] == 2L) {
+          if (targ_room[a] < hw_r & targ_room[a] > hw_l) {
+            state[a] <- targ_room[a] + sign(Rest[a] - targ_room[a]) + 2*1i
+            return(list(state))
+          }
+        }
+
+        targ <- hallway[hallway > hw_l & hallway < hw_r] + 2*1i
         if (length(targ) > 0) {
           new_states <- c(new_states, lapply(targ, \(z) {x <- state; x[a] <- z; return(x)}))
         }
@@ -57,7 +68,8 @@ move_amphipods <- function(inp) {
     return(new_states)
   }
 
-  state2int <- \(st) sum(sapply(map, \(x) c(label[st == x], 0)[1]) * 5^(seq_along(map) - 1))
+  pow5 <- 5^(seq_along(map) - 1)
+  state2int <- \(st) sum(sapply(map, \(x) c(label[st == x], 0)[1]) * pow5)
 
   compute_energy <- function(state1, state2) {
     sum((abs(Re(state1 - state2)) + abs(Im(state1 - state2)))*en_vec)

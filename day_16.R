@@ -24,7 +24,6 @@ find_value <- function() {
   else {#number of packages
     n_pack <- bin2int(bits[7L + seq_len(11L)])
     bits <<- bits[-seq_len(18L)]
-    # val <- sapply(seq_len(n_pack), \(k) find_value())
     val <- replicate(n_pack, find_value())
   }
 

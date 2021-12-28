@@ -5,7 +5,7 @@ sum(sapply(data08, \(z) sum(nchar(z[-(1:10)]) %in% c(2:4, 7))))
 
 #part2-----------
 find_digits <- function(x) {
-  y <- paste0("[^", sapply(c(2,4,7), \(k) x[sapply(x, nchar) == k][1]), "]")
+  y <- paste0("[^", x[nchar(x) %in% c(2, 4, 7)], "]")[1:3]
   tmp <- apply(sapply(y, \(z) nchar(gsub(z, "", x[11:14]))), 1, prod)
   map_vec <- c(36, 8, 10, 30, 32, 15, 18, 12, 56, 48)
   sum(sapply(tmp, \(k) which(map_vec == k) - 1) * 10^(3:0))

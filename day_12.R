@@ -11,11 +11,11 @@ count_paths <- function(p, part1, sc_vec = setNames(integer(length(sc)), sc)) {
   if (p == "end") return(1L)
   if (p %in% sc) sc_vec[p] <- sc_vec[p] + 1L
 
-  id <- paste(p, paste0(sc_vec, collapse = ""), sep = "_")
+  id <- paste(p, paste0(sc_vec, collapse = ""), part1, sep = "_")
   if (id %in% names(lookup)) return(lookup[id])
 
-  invalid <- any(sc_vec > 2) | sum(sc_vec > 1) > 1 | (part1 & any(sc_vec > 1))
-  res <- if (invalid) 0L else sum(sapply(map[names(map) == p], count_paths, part1, sc_vec))
+  inv <- if (part1) any(sc_vec > 1) else any(sc_vec > 2) | sum(sc_vec > 1) > 1
+  res <- if (inv) 0L else sum(sapply(map[names(map) == p], count_paths, part1, sc_vec))
 
   lookup <<- c(lookup, setNames(res, id))
   return(res)
@@ -25,7 +25,6 @@ count_paths <- function(p, part1, sc_vec = setNames(integer(length(sc)), sc)) {
 count_paths("start", part1 = TRUE)
 
 #part2-----------
-lookup <- integer()
 count_paths("start", part1 = FALSE)
 
 #first we create a vector which is our map: we use the names attribute

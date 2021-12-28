@@ -14,17 +14,17 @@ A <- array(0L, dim = c(10,21,10,21))
 A[data21[2],1,data21[1], 1] <- 1L
 oc <- rep(c(0L, 0L, 0L, table(rowSums(expand.grid(1:3, 1:3, 1:3)))), 10)
 n <- c(0, 0)
-B <- sapply(0:9, \(k) oc[k * 9L + 1:10])
+mat_pos <- sapply(0:9, \(k) oc[k * 9L + 1:10])
 
-update2x2 <- function(a, pl) {
-  C <- B %*% a
-  n[pl] <<- n[pl] + sum(C[row(C) + col(C) >= 22])
-  t(sapply(1:10, \(k) c(rep.int(0L, k), C[k,])[seq_len(21)]))
+update_2d <- function(m, pl) {
+  new_pos <- mat_pos %*% m #new positions after players pl turn
+  n[pl] <<- n[pl] + sum(new_pos[row(new_pos) + col(new_pos) >= 22L]) #positions which will reach score 21
+  t(sapply(1:10, \(k) c(rep.int(0L, k), new_pos[k,])[seq_len(21)])) # update score according to positions
 }
 
-for (r in 1:30) {
-  A <- array(apply(A, c(1,2), update2x2, pl = 2 - r %% 2), dim = dim(A))
-  if (all(A == 0)) break
-}
-
+for (r in rep_len(1:2, 19)) A <- array(apply(A, c(1,2), update_2d, pl = r), dim(A))
 sprintf("%.f", max(n))
+
+#the game cannot take longer than 19 turns.
+#after player 1's 10th turn the game is over no matter what:
+#worst case positions 2,1,4,3,2,1,4,2,1 with score 20
