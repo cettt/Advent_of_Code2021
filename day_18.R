@@ -24,10 +24,17 @@ add_pair <- function(x, y) {
     if (any(idx)) {
       n <- .Internal(which(idx))[1L]
       z <- xy[n]
-      nam <- as.character(as.integer(names(z)) + 1L)
       new_val <- as.integer((z + 0:1) / 2L)
-      names(new_val) <- c(nam, nam)
-      xy <- c(xy[seq_len(n - 1L)], new_val, xy[-seq_len(n)])
+
+      if (names(z) == "4") { #if there is an explosion right after the split
+        if (n > 1L)         xy[n - 1L] <- xy[n - 1L] + new_val[1]
+        if (n < length(xy)) xy[n + 1L] <- xy[n + 1L] + new_val[2]
+        xy[n] <- 0L
+      } else {
+        nam <- as.character(as.integer(names(z)) + 1L)
+        names(new_val) <- c(nam, nam)
+        xy <- c(xy[seq_len(n - 1L)], new_val, xy[-seq_len(n)])
+      }
     } else break
   }
   return(xy)
@@ -47,5 +54,6 @@ magn <- function(xy) {
 magn(Reduce(add_pair, data18))
 
 #part2-------
-A <- cbind(rep(seq_along(data18), 100), rep(seq_along(data18), each = 100))
-max(apply(A[A[,1] != A[,2], ], 1, \(k) magn(Reduce(add_pair, data18[k]))))
+idx <- order(sapply(data18, sum), decreasing = TRUE)[1:40]
+A <- subset(expand.grid(x = idx, y = idx), x != y)
+max(apply(A, 1, \(k) magn(Reduce(add_pair, data18[k]))))

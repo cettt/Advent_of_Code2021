@@ -11,17 +11,16 @@ map_k <- function(k, n) {
 
 lookup <- lapply(seq_along(map), map_k, n = 202L)
 
-pix_vec <- integer(50)
 pow2 <- 2L^(8:0)
 for (r in seq_len(50)) {
   i_idx <- as.integer(matrix(seq_len(202^2), 202)[(52 - r):(151 + r), (52 - r):(151 + r)])
-  map[i_idx] <- data20[sapply(i_idx, \(k) sum(map[lookup[[k]]]*pow2) + 1L)]
+  map[i_idx] <- data20[colSums(matrix(map[unlist(lookup[i_idx])]*pow2, nrow = 9)) + 1]
   map[-i_idx] <- data20[map[1] * 511L + 1L]
-  pix_vec[r] <- sum(map)
+  if (r == 2) part1 <- sum(map)
 }
 
 #part 1----
-pix_vec[2]
+part1
 
 #part 2----
-pix_vec[50]
+sum(map)

@@ -1,8 +1,7 @@
 data21 <- read.table("input/day21.txt", sep = ":")[,2]
 
 #part1------
-die <- rep.int(seq_len(10L) %% 10L, 300L) #each player gets 500 turns
-mo <- aggregate(die, list(rep(seq_len(1e3), each = 3L)), \(x) sum(x) %% 10L)[,2]
+mo <- rep_len(9:0, 1003)[-(1:3)] #first player rolls 6, second rolls 15 = 5 mod 10, then 24 = 4 mod 10 etc
 mo[1:2] <- (mo[1:2] + data21 - 1L) %% 10L + 1L
 score <- aggregate(mo, list(rep.int(1:2, 500L)), \(x) cumsum((cumsum(x) - 1L) %% 10L + 1L))[,2]
 
