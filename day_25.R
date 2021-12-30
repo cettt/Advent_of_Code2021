@@ -10,10 +10,9 @@ lu <- sapply(seq_along(data25), neighbor_k)
 map0 <- unname(c(">" = 1L, "v" = 2L, "." = 0L)[data25])
 
 update_map <- function(x) {
-  x1 <- ifelse(x == 0L & x[lu[3, ]] == 1L, 1L,
-               ifelse(x == 0L, 0L, ifelse(x == 1L & x[lu[4, ]] == 0L, 0L, x)))
+  x1 <- ifelse(x == 0L & x[lu[3, ]] == 1L, 1L, ifelse(x == 1L & x[lu[4, ]] == 0L, 0L, x))
 
-  ifelse(x1 == 0L & x[lu[1,]] == 2L, 2L, ifelse(x1 == 2L & x1[lu[2, ]] == 0L, 0L, x1))
+  ifelse(x1 == 0L & x1[lu[1,]] == 2L, 2L, ifelse(x1 == 2L & x1[lu[2, ]] == 0L, 0L, x1))
 }
 
 for (steps in 1:1e3) {
@@ -22,4 +21,3 @@ for (steps in 1:1e3) {
   map0 <- map1
 }
 steps
-

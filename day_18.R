@@ -41,12 +41,12 @@ add_pair <- function(x, y) {
 }
 
 magn <- function(xy) {
-  for (i in seq_len(length(xy) - 1L)) {
-    nam <- as.integer(names(xy))
-    n <- which.max(nam)
-    xy[n] <- sum(xy[n + 0:1] * 3:2)
-    names(xy)[n] <- as.character(nam[n] - 1L)
-    xy <- xy[-n - 1L]
+  for (nam in as.character(4:1)) {
+    idx <- .Internal(which(names(xy) == nam))
+    idx1 <- idx[seq_along(idx) %% 2L == 1L]
+    xy[idx1] <- xy[idx1]*3L + xy[idx1 + 1L]*2L
+    names(xy)[idx1] <- as.character(as.integer(nam) - 1L)
+    xy <- xy[-idx1 - 1L]
   }
   return(xy)
 }

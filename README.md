@@ -8,7 +8,7 @@ puzzles. The event is hosted by [Eric Wastl](http://was.tl/) and takes
 place between December 1st and December 25th.
 
 I solved all puzzles using R (version 4.1.0). Most of the solutions only
-require base packages only. For Days 15 and 23 I used the
+require base packages. For Days 15 and 23 I used the
 [collections](https://cran.r-project.org/web/packages/collections/index.html)
 library which provides high performance container types (in particular
 priority queues).
