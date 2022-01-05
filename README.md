@@ -17,3 +17,19 @@ I try to go for fast and short solutions which means that the resulting
 code is not always as easy to read as it could be.
 
 <img src="README_files/figure-gfm/unnamed-chunk-1-1.png" width="100%" />
+
+### Day 09
+
+<img src="Output/Day09_Basin_small.png" height="300">
+
+### Day 13
+
+<img src="Output/Day13_message_small.gif" height="200">
+
+### Day 23
+
+<img src="Output/Day23_amphipod_small.gif" height="200">
+
+### Day 25
+
+<img src="Output/Day25_cucumber_small.gif" height="300">

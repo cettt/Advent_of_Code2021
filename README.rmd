@@ -25,3 +25,14 @@ library(tidyverse)
 print(readRDS("Output/AoC2021_results.RDS"))
 ```
 
+### Day 09
+<img src="Output/Day09_Basin_small.png" height="300">
+
+### Day 13
+<img src="Output/Day13_message_small.gif" height="200">
+
+### Day 23
+<img src="Output/Day23_amphipod_small.gif" height="200">
+
+### Day 25
+<img src="Output/Day25_cucumber_small.gif" height="300">
